@@ -20,11 +20,13 @@ const authenticatedUser = (username,password)=>{
     let validusers = users.filter((user)=>{
         return (user.username === username && user.password === password)
       });
-      if(validusers.length > 0){
+
+      if(validusers.length > 0) {
         return true;
       } else {
         return false;
-      }}
+      }
+}
 
 //only registered users can login
 regd_users.post("/login", (req,res) => {
@@ -65,20 +67,38 @@ regd_users.post("/register", (req,res) => {
 });
 
 // Add a book review
-regd_users.put("/auth/review/:isbn", (req, res) => {
-    
-});
+
+regd_users.put("/auth/review/:isbn", async (req, res) =>{
+ 
+    const isbn = req.params.isbn;
+    const username = req.session.authorization.username	
+    let book = books[isbn]
+    if (book) {
+        let review = req.query.review;
+        let reviewer = req.session.authorization['username'];
+        if(review) {
+            book['reviews'][reviewer] = review;
+            books[isbn] = await book;
+        }
+        res.send("The review for the book with ISBN  ${isbn} has been added/updated.");
+    }  else{
+        res.send("Unable to find this ISBN");
+    }
+    });
+
+// delete book review
 regd_users.delete("/auth/review/:isbn", async (req, res) => {
-     const isbn = req.params.isbn
-     const username = req.session.authorization.username
-     if (books[isbn]) {
-         let book = await books[isbn]
-         delete book.reviews[username]
-         return res.status(200).send("Review successfully deleted")
-     } else {
-         return res.status(404).json({message: "ISBN not found"})
-     }
- })
+
+    const isbn = req.params.isbn
+    const username = req.session.authorization.username
+    if (books[isbn]) {
+        let book = await books[isbn]
+        delete book.reviews[username]
+        return res.status(200).send("Review successfully deleted")
+    } else {
+        return res.status(404).json({message: "ISBN not found"})
+    }
+})
 
 module.exports.authenticated = regd_users;
 module.exports.isValid = isValid;
